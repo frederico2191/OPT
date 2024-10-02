@@ -5,10 +5,8 @@ import { ROOT } from "../navigation/constants";
 
 export const RouterConfig = () => {
   return (
-    <div>
       <Routes>
         <Route path={ROOT} element={<Home/>}/>
       </Routes>
-    </div>
   );
 };

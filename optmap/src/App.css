@@ -36,3 +36,24 @@
     transform: rotate(360deg);
   }
 }
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Ensure full height for centering */
+}
+
+#map-container {
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  height: 100%; /* Full height to center */
+  padding-top: 20px; /* Padding from the top */
+  box-sizing: border-box; /* Include padding in height calculations */
+}
+
+#map {
+  width: 100%;
+  height: 600px; /* Fixed height for the map */
+  max-width: 800px; /* Optional: set a max-width for the map */
+}
