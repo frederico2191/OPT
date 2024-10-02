@@ -45,7 +45,8 @@ const MapComponent = () => {
 
         marker.getElement().addEventListener('click', () => {
           setSearched(stop.code);
-          navigate(`/${stop.code}`);
+          navigate(`/${stop.code}`); 
+        });
       });
     };
 
