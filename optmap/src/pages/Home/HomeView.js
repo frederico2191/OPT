@@ -1,66 +1,97 @@
 import React, { useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { getStops } from "../../api";
+import { getStops, getSchedules } from "../../api"; // Ensure getSchedules is defined in your API
 import { useNavigate, useSearchParams } from "react-router-dom";
 import './index';
 import 'mapbox-gl/dist/mapbox-gl.css';
-const MapAccessToken = "pk.eyJ1IjoidGhpYWdvc29icmFsIiwiYSI6ImNseTF3Y3Y1djB6MW8yaXI2Z255bjk1Y2oifQ.CvNetOTQhag4--2DUS8_Pg"
+import { getCurrentTimeInMinutes } from "../../api/utils";
 
-
-
-const MapAcessToken = "pk.eyJ1IjoidGhpYWdvc29icmFsIiwiYSI6ImNseTF3Y3Y1djB6MW8yaXI2Z255bjk1Y2oifQ.CvNetOTQhag4--2DUS8_Pg"
+const MapAccessToken = "pk.eyJ1IjoidGhpYWdvc29icmFsIiwiYSI6ImNseTF3Y3Y1djB6MW8yaXI2Z255bjk1Y2oifQ.CvNetOTQhag4--2DUS8_Pg";
 
 const MapComponent = () => {
-  const [currentTime, setCurrentTime] = useState();
+  const [currentTime, setCurrentTime] = useState(0);
   const [stops, setStops] = useState([]);
   const [searchParams] = useSearchParams();
-  const [searched, setSearched] = useState('')
   const navigate = useNavigate();
 
-  const fromURL = searchParams.get('query')
+  const fromURL = searchParams.get('query');
+
 
   useEffect(() => {
-    setSearched(fromURL)
-  }, [fromURL,searched])
-  
+    const interval = setInterval(() => {
+      setCurrentTime(getCurrentTimeInMinutes());
+    }, 60000); 
+    return () => clearInterval(interval);
+  }, []);
 
-  mapboxgl.accessToken = MapAcessToken
+
   useEffect(() => {
-      
-      console.log("map access token",process.env.REACT_APP_MAPBOX_ACCESS_TOKEN)
-      const map = new mapboxgl.Map({
-        container: "map",
-        style: "mapbox://styles/mapbox/streets-v11", // Map style
-        center: [-8.62, 41.15],
-        zoom: 10,
-      });
+    mapboxgl.accessToken = MapAccessToken;
+    const map = new mapboxgl.Map({
+      container: "map",
+      style: "mapbox://styles/mapbox/streets-v11",
+      center: [-8.62, 41.15],
+      zoom: 10,
+    });
+
     (async () => {
       const stops = await getStops();
-      setStops(stops)
-      
-      console.log("response", stops);
+      setStops(stops);
 
-      stops.forEach((stop) => {
-        new mapboxgl.Marker()
-          .setLngLat([stop.longitude, stop.latitude])
-          .setPopup(new mapboxgl.Popup().setHTML(`
-            <strong>${stop.name}</strong><br />
-            ${stop.code}
-          `)) 
-          .addTo(map)
-          .getElement().addEventListener('click', () => {
-            setSearched(stop.code)
-            console.log("stop?code",stop.code)
-            // fromURL.searchParams.set("a",33)
-            navigate(fromURL,stop.code)
+      stops?.forEach((stop) => {
+        const marker = new mapboxgl.Marker()
+          .setLngLat([stop?.longitude, stop?.latitude])
+          .addTo(map);
+
+        const popup = new mapboxgl.Popup(); 
+
+        marker.getElement().addEventListener('click', async () => {
+          console.log("stop?code importanteE!!!!!! 4444 ", stop?.code);
+          const schedules = await getSchedules(stop?.code);
+          console.log("schedules after click", schedules)
+          
+          const upcomingBuses = schedules.filter(bus => {
+            console.log("currentTime for calculating upcoming buses",currentTime)
+            const busTime = bus.time; 
+            console.log("busTime", busTime)
+            const minutesToArrival = busTime - currentTime; 
+            console.log("minutes to arrival!!", minutesToArrival)
+            return minutesToArrival >= 0 && minutesToArrival <= 60;
           });
-        console.log("stop?",stop)
-      });
 
+
+          let popupContent = `<strong>${stop?.name}</strong>`;
+          if (upcomingBuses.length === 0) {
+            popupContent += "Sem chegadas previstas na próxima hora";
+          } else {
+            upcomingBuses.forEach(bus => {
+              const minutesToArrival = bus.time - currentTime; 
+              let color;
+              if (minutesToArrival < 3) {
+                color = 'red';
+              } else if (minutesToArrival < 5) {
+                color = 'orange';
+              } else {
+                color = 'black';
+              }
+              popupContent += `<span style="color:${color}">Bus ${bus.lineName} will arrive in ${minutesToArrival} minutes</span><br />`;
+            });
+          }
+
+
+          popup.setHTML(popupContent)
+               .setLngLat([stop?.longitude, stop?.latitude]) 
+               .addTo(map); 
+          popup.addTo(map); 
+
+          navigate(fromURL, { state: { code: stop?.code } });
+        });
+        console.log("stop important!!!55555", stop);
+      });
     })();
 
     return () => map.remove();
-  }, []);
+  }, [currentTime, fromURL, navigate]);
 
   return (
     <div
@@ -74,8 +105,6 @@ const MapComponent = () => {
 };
 
 export default MapComponent;
-
-
 
 
 
