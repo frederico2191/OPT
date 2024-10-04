@@ -1,46 +1,5 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 body, html {
-  margin: 0;
-  padding: 0;
-  height: 100%; /* Ensure full height for centering */
+  height: 100%;
 }
 
 #map-container {
@@ -48,12 +7,11 @@ body, html {
   justify-content: center; /* Center horizontally */
   align-items: center; /* Center vertically */
   height: 100%; /* Full height to center */
-  padding-top: 20px; /* Padding from the top */
-  box-sizing: border-box; /* Include padding in height calculations */
+  padding-top: 3rem; /* Padding from the top */
 }
 
 #map {
   width: 100%;
-  height: 600px; /* Fixed height for the map */
-  max-width: 800px; /* Optional: set a max-width for the map */
+  height: 600px; 
+  max-width: 800px; 
 }

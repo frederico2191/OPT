@@ -44,10 +44,7 @@ const MapComponent = () => {
         const popup = new mapboxgl.Popup(); 
 
         marker.getElement().addEventListener('click', async () => {
-          console.log("stop?code importanteE!!!!!! 4444 ", stop?.code);
           const schedules = await getSchedules(stop?.code);
-          console.log("schedules after click", schedules);
-
           const upcomingBuses = schedules.filter(bus => {
             const busTime = bus.time; 
             const minutesToArrival = busTime - currentTime; 
@@ -56,7 +53,7 @@ const MapComponent = () => {
 
           let popupContent = `<strong>${stop?.name}</strong><br/>${stop?.code}<br/>`;
           if (upcomingBuses.length === 0) {
-            popupContent += "<br/>Sem chegadas previstas na próxima hora";
+            popupContent += "<br/>Sem chegadas na próxima hora";
           } else {
             upcomingBuses.forEach(bus => {
               const minutesToArrival = bus.time - currentTime; 
@@ -68,7 +65,7 @@ const MapComponent = () => {
               } else {
                 color = 'black';
               }
-              popupContent += `<span style="color:${color}">${bus.line} ${bus.lineName} ${minutesToArrival} min</span><br />`;
+              popupContent += `<span>${bus.line} ${bus.lineName} <span style="color:${color}">${minutesToArrival} min</span></span><br />`;
             });
           }
 
@@ -85,13 +82,15 @@ const MapComponent = () => {
   }, [currentTime, fromURL, navigate]); 
 
   return (
-    <div
-      id="map"
-      style={{
-        width: "100%",
-        height: "600px",
-      }}
-    ></div>
+    <div id="map-container">
+      <div
+        id="map"
+        style={{
+          width: "100%",
+          height: "600px",
+        }}
+      ></div>
+    </div>
   );
 };
 
