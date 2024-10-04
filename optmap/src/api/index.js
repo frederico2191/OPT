@@ -3,6 +3,8 @@ import { getCurrentTimeInMinutes } from "./utils";
 
 const urlStops = "http://dev1.opt.pt:25566/stops";
 const urlSchedules = "http://dev1.opt.pt:25566/arrivals/";
+export const  MapAccessToken = "pk.eyJ1IjoidGhpYWdvc29icmFsIiwiYSI6ImNseTF3Y3Y1djB6MW8yaXI2Z255bjk1Y2oifQ.CvNetOTQhag4--2DUS8_Pg";
+
 
 export const getStops = async () => {
   try {

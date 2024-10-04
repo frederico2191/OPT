@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { getStops, getSchedules } from "../../api";
+import { getStops, getSchedules, MapAccessToken } from "../../api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import './index';
 import 'mapbox-gl/dist/mapbox-gl.css'; 
 import { getCurrentTimeInMinutes } from "../../api/utils"; 
-
-const MapAccessToken = "pk.eyJ1IjoidGhpYWdvc29icmFsIiwiYSI6ImNseTF3Y3Y1djB6MW8yaXI2Z255bjk1Y2oifQ.CvNetOTQhag4--2DUS8_Pg";
 
 const MapComponent = () => {
   const [currentTime, setCurrentTime] = useState(getCurrentTimeInMinutes());
@@ -18,7 +16,7 @@ const MapComponent = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(getCurrentTimeInMinutes());
-    }, 60000); 
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -31,82 +29,77 @@ const MapComponent = () => {
       zoom: 10,
     });
 
-    map.on('load', async () => {
+    const loadStops = async () => {
       try {
-        const stops = await getStops();
-        setStops(stops);
-
-        stops.forEach((stop) => {
-          if (stop?.longitude && stop?.latitude) {
-            const marker = new mapboxgl.Marker()
-              .setLngLat([stop.longitude, stop.latitude]);
-
-            const popup = new mapboxgl.Popup(); 
-
-            marker.getElement() ? marker.addTo(map) : console.error("Marker element is undefined for stop:", stop);
-
-            marker.getElement()?.addEventListener('click', async () => {
-              const schedules = await getSchedules(stop?.code);
-              const upcomingBuses = schedules.filter(bus => {
-                const busTime = bus.time; 
-                const minutesToArrival = busTime - currentTime; 
-                return minutesToArrival >= 0 && minutesToArrival <= 60;
-              });
-
-              let popupContent = `<strong>${stop?.name}</strong><br/>${stop?.code}<br/>`;
-              if (upcomingBuses.length === 0) {
-                popupContent += "<br/>Sem chegadas na próxima hora";
-              } else {
-                upcomingBuses.forEach(bus => {
-                  const minutesToArrival = bus.time - currentTime; 
-                  let color;
-                  if (minutesToArrival < 3) {
-                    color = 'red';
-                  } else if (minutesToArrival < 5) {
-                    color = 'orange';
-                  } else {
-                    color = 'black';
-                  }
-
-                  const trimmedLineName = bus.lineName.length > 16 ? bus.lineName.slice(0, 16) + '...' : bus.lineName;
-
-                  popupContent += `
-                  <div id="popup-container">
-                      <span>${bus.line} ${trimmedLineName}</span>
-                      <span style="margin-left: 5px; color:${color};">${minutesToArrival} min</span>
-                    </div>
-                    <br />
-                  `;
-                });
-              }
-
-              popup.setHTML(popupContent)
-                   .setLngLat([stop.longitude, stop.latitude]) 
-                   .addTo(map); 
-
-              navigate(fromURL, { state: { code: stop?.code } });
-            });
-          } else {
-            console.warn("Invalid stop coordinates:", stop);
-          }
-        });
+        const fetchedStops = await getStops();
+        setStops(fetchedStops);
+        fetchedStops.forEach(initializeMarker);
       } catch (error) {
         console.error("Error fetching stops:", error);
       }
-    });
+    };
 
+    const initializeMarker = (stop) => {
+      if (stop?.longitude && stop?.latitude) {
+        const marker = new mapboxgl.Marker().setLngLat([stop.longitude, stop.latitude]);
+        marker.addTo(map);
+        marker.getElement()?.addEventListener('click', () => handleMarkerClick(stop));
+      } else {
+        console.warn("Invalid stop coordinates:", stop);
+      }
+    };
+
+    const handleMarkerClick = async (stop) => {
+      const schedules = await getSchedules(stop?.code);
+      const upcomingBuses = schedules.filter(bus => {
+        const minutesToArrival = bus.time - currentTime;
+        return minutesToArrival >= 0 && minutesToArrival <= 60;
+      });
+
+      const popupContent = createPopupContent(stop, upcomingBuses);
+      new mapboxgl.Popup()
+        .setHTML(popupContent)
+        .setLngLat([stop.longitude, stop.latitude])
+        .addTo(map);
+
+      navigate(fromURL, { state: { code: stop?.code } });
+    };
+
+    const createPopupContent = (stop, upcomingBuses) => {
+      let content = `<strong>${stop?.name}</strong><br/>${stop?.code}<br/>`;
+      if (upcomingBuses.length === 0) {
+        content += "<br/>Sem chegadas na próxima hora";
+      } else {
+        upcomingBuses.forEach(bus => {
+          const minutesToArrival = bus.time - currentTime;
+          const color = getBusColor(minutesToArrival);
+          const trimmedLineName = bus.lineName.length > 16 ? `${bus.lineName.slice(0, 16)}...` : bus.lineName;
+
+          content += `
+            <div id="popup-container">
+              <span>${bus.line} ${trimmedLineName}</span>
+              <span style="margin-left: 5px; color:${color};">${minutesToArrival} min</span>
+            </div>
+            <br />
+          `;
+        });
+      }
+      return content;
+    };
+
+    const getBusColor = (minutesToArrival) => {
+      if (minutesToArrival < 3) return 'red';
+      if (minutesToArrival < 5) return 'orange';
+      return 'black';
+    };
+
+    map.on('load', loadStops);
     return () => map.remove();
   }, [currentTime, fromURL, navigate]); 
 
   return (
     <div id="map-container">
-      <div
-        id="map"
-        style={{
-          width: "100%",
-          height: "600px",
-        }}
-      ></div>
+      <div id="map" />
     </div>
   );
 };

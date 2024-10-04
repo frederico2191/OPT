@@ -1,2 +1,2 @@
-import HomeContainer from './HomeContainer'
-export default HomeContainer
+import HomeView from './HomeView'
+export default HomeView
