@@ -31,7 +31,6 @@ const MapComponent = () => {
       zoom: 10,
     });
 
-    // Wait for the map to load before adding markers
     map.on('load', async () => {
       try {
         const stops = await getStops();
@@ -44,7 +43,6 @@ const MapComponent = () => {
 
             const popup = new mapboxgl.Popup(); 
 
-            // The marker's element needs to be ready before trying to add it to the map???
             marker.getElement() ? marker.addTo(map) : console.error("Marker element is undefined for stop:", stop);
 
             marker.getElement()?.addEventListener('click', async () => {
@@ -69,7 +67,16 @@ const MapComponent = () => {
                   } else {
                     color = 'black';
                   }
-                  popupContent += `<span>${bus.line} ${bus.lineName} <span style="color:${color}">${minutesToArrival} min</span></span><br />`;
+
+                  const trimmedLineName = bus.lineName.length > 16 ? bus.lineName.slice(0, 16) + '...' : bus.lineName;
+
+                  popupContent += `
+                  <div id="popup-container">
+                      <span>${bus.line} ${trimmedLineName}</span>
+                      <span style="margin-left: 5px; color:${color};">${minutesToArrival} min</span>
+                    </div>
+                    <br />
+                  `;
                 });
               }
 
